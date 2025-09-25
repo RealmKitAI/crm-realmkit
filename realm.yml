@@ -1,7 +1,9 @@
 name: "RealmKit CRM"
 version: "1.0.0"
 description: "Complete AI-optimized CRM platform for modern sales teams - Customer relationship management with advanced analytics, pipeline management, and AI-powered insights"
-namespace: "realmkit/crm"
+longDescription: "The most advanced, AI-optimized CRM platform built for modern sales teams and businesses. Features complete contact & lead management, visual sales pipeline with drag-and-drop, advanced analytics & reporting, email & calendar integration, real-time collaboration, mobile-responsive design, AI-powered insights & automation, and production deployment ready setup."
+namespace: "realmkitai/crm-realmkit"
+license: "MIT"
 
 features:
   - id: "contact-management"
