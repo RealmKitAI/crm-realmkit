@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies)
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy prisma schema first for generation
 COPY prisma ./prisma/
