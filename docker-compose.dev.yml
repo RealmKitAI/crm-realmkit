@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://crm_user:crm_password@postgres:5432/crm_dev_db
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: dev-secret-key
+      REDIS_URL: redis://redis:6379
+    command: npm run dev
+
+  postgres:
+    environment:
+      POSTGRES_DB: crm_dev_db

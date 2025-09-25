@@ -1,0 +1,29 @@
+FROM node:18-alpine
+
+# Install dependencies for development
+RUN apk add --no-cache libc6-compat git
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm install
+
+# Copy prisma schema first for generation
+COPY prisma ./prisma/
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Copy the rest of the application
+COPY . .
+
+# Create directories for uploads and logs
+RUN mkdir -p uploads logs
+
+EXPOSE 3000
+
+# Start development server
+CMD ["npm", "run", "dev"]

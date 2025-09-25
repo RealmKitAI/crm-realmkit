@@ -1,0 +1,766 @@
+// CRM Database Schema - Optimized for Customer Relationship Management
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Authentication & User Management Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole  @default(USER)
+  status        UserStatus @default(ACTIVE)
+  timezone      String?   @default("UTC")
+  locale        String?   @default("en")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relationships
+  accounts             Account[]
+  sessions             Session[]
+  ownedCompanies       Company[]            @relation("CompanyOwner")
+  assignedContacts     Contact[]            @relation("ContactOwner")
+  assignedLeads        Lead[]               @relation("LeadOwner")
+  assignedDeals        Deal[]               @relation("DealOwner")
+  activities           Activity[]
+  createdTasks         Task[]               @relation("TaskCreator")
+  assignedTasks        Task[]               @relation("TaskAssignee")
+  emailTemplates       EmailTemplate[]
+  campaigns            Campaign[]
+  reports              Report[]
+  teamMemberships      TeamMember[]
+  auditLogs            AuditLog[]
+  notifications        Notification[]       @relation("NotificationRecipient")
+  sentNotifications    Notification[]       @relation("NotificationSender")
+  customFieldValues    CustomFieldValue[]
+  integrationTokens    IntegrationToken[]
+
+  @@index([email])
+  @@index([role, status])
+  @@map("users")
+}
+
+// Core CRM Entities
+model Company {
+  id               String            @id @default(cuid())
+  name             String
+  domain           String?           @unique
+  website          String?
+  industry         String?
+  size             CompanySize?
+  annualRevenue    Decimal?
+  description      String?
+  logo             String?
+  phone            String?
+  address          String?
+  city             String?
+  state            String?
+  zipCode          String?
+  country          String?
+  timezone         String?
+  status           CompanyStatus     @default(ACTIVE)
+  ownerId          String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  // Relationships
+  owner            User              @relation("CompanyOwner", fields: [ownerId], references: [id])
+  contacts         Contact[]
+  leads            Lead[]
+  deals            Deal[]
+  activities       Activity[]
+  customFieldValues CustomFieldValue[]
+  parentCompanyId  String?
+  parentCompany    Company?          @relation("CompanyHierarchy", fields: [parentCompanyId], references: [id])
+  subsidiaries     Company[]         @relation("CompanyHierarchy")
+
+  @@index([domain])
+  @@index([industry])
+  @@index([ownerId])
+  @@index([status])
+  @@map("companies")
+}
+
+model Contact {
+  id                String            @id @default(cuid())
+  firstName         String
+  lastName          String
+  email             String?
+  phone             String?
+  mobile            String?
+  title             String?           // Job title
+  department        String?
+  linkedinUrl       String?
+  twitterUrl        String?
+  avatar            String?
+  notes             String?
+  leadSource        String?
+  tags              String[]
+  status            ContactStatus     @default(ACTIVE)
+  isDecisionMaker   Boolean           @default(false)
+  companyId         String?
+  ownerId           String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  lastContactedAt   DateTime?
+
+  // Relationships
+  company           Company?          @relation(fields: [companyId], references: [id])
+  owner             User              @relation("ContactOwner", fields: [ownerId], references: [id])
+  activities        Activity[]
+  deals             Deal[]            @relation("DealContacts")
+  tasks             Task[]
+  emailsSent        Email[]           @relation("EmailRecipients")
+  customFieldValues CustomFieldValue[]
+
+  @@index([email])
+  @@index([companyId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([lastContactedAt])
+  @@map("contacts")
+}
+
+model Lead {
+  id                String            @id @default(cuid())
+  firstName         String
+  lastName          String
+  email             String?
+  phone             String?
+  title             String?
+  companyName       String?
+  website           String?
+  leadSource        String?
+  leadSourceDetail  String?           // UTM campaign, referrer, etc.
+  status            LeadStatus        @default(NEW)
+  score             Int               @default(0)
+  temperature       LeadTemperature   @default(COLD)
+  notes             String?
+  tags              String[]
+  qualifiedAt       DateTime?
+  convertedAt       DateTime?
+  ownerId           String
+  companyId         String?
+  convertedContactId String?          @unique
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relationships
+  owner             User              @relation("LeadOwner", fields: [ownerId], references: [id])
+  company           Company?          @relation(fields: [companyId], references: [id])
+  convertedContact  Contact?          @relation(fields: [convertedContactId], references: [id])
+  activities        Activity[]
+  deals             Deal[]
+  customFieldValues CustomFieldValue[]
+
+  @@index([email])
+  @@index([status, score])
+  @@index([ownerId])
+  @@index([leadSource])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+model Deal {
+  id              String            @id @default(cuid())
+  name            String
+  description     String?
+  value           Decimal?
+  currency        String            @default("USD")
+  stage           String
+  probability     Int               @default(0) // 0-100%
+  expectedCloseDate DateTime?
+  actualCloseDate DateTime?
+  lostReason      String?
+  source          String?
+  tags            String[]
+  status          DealStatus        @default(OPEN)
+  ownerId         String
+  companyId       String?
+  leadId          String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relationships
+  owner           User              @relation("DealOwner", fields: [ownerId], references: [id])
+  company         Company?          @relation(fields: [companyId], references: [id])
+  lead            Lead?             @relation(fields: [leadId], references: [id])
+  contacts        Contact[]         @relation("DealContacts")
+  activities      Activity[]
+  tasks           Task[]
+  pipeline        Pipeline          @relation(fields: [stage], references: [id])
+  customFieldValues CustomFieldValue[]
+
+  @@index([stage, status])
+  @@index([ownerId])
+  @@index([companyId])
+  @@index([expectedCloseDate])
+  @@index([value])
+  @@map("deals")
+}
+
+model Pipeline {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  order       Int      @default(0)
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  deals       Deal[]
+
+  @@index([order])
+  @@map("pipelines")
+}
+
+// Activity & Communication Models
+model Activity {
+  id            String         @id @default(cuid())
+  type          ActivityType
+  subject       String
+  description   String?
+  startDate     DateTime
+  endDate       DateTime?
+  location      String?
+  outcome       String?
+  duration      Int?           // Duration in minutes
+  isCompleted   Boolean        @default(false)
+  userId        String
+  contactId     String?
+  leadId        String?
+  dealId        String?
+  companyId     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relationships
+  user          User           @relation(fields: [userId], references: [id])
+  contact       Contact?       @relation(fields: [contactId], references: [id])
+  lead          Lead?          @relation(fields: [leadId], references: [id])
+  deal          Deal?          @relation(fields: [dealId], references: [id])
+  company       Company?       @relation(fields: [companyId], references: [id])
+  emails        Email[]
+  customFieldValues CustomFieldValue[]
+
+  @@index([type, startDate])
+  @@index([userId])
+  @@index([contactId])
+  @@index([dealId])
+  @@index([isCompleted])
+  @@map("activities")
+}
+
+model Task {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  dueDate       DateTime?
+  priority      TaskPriority   @default(MEDIUM)
+  status        TaskStatus     @default(PENDING)
+  type          TaskType       @default(TASK)
+  createdById   String
+  assignedToId  String?
+  contactId     String?
+  dealId        String?
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relationships
+  createdBy     User           @relation("TaskCreator", fields: [createdById], references: [id])
+  assignedTo    User?          @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  contact       Contact?       @relation(fields: [contactId], references: [id])
+  deal          Deal?          @relation(fields: [dealId], references: [id])
+
+  @@index([status, dueDate])
+  @@index([assignedToId])
+  @@index([createdById])
+  @@index([priority])
+  @@map("tasks")
+}
+
+model Email {
+  id              String            @id @default(cuid())
+  subject         String
+  body            String
+  htmlBody        String?
+  fromEmail       String
+  fromName        String?
+  replyTo         String?
+  status          EmailStatus       @default(DRAFT)
+  sentAt          DateTime?
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  bouncedAt       DateTime?
+  activityId      String?
+  templateId      String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relationships
+  activity        Activity?         @relation(fields: [activityId], references: [id])
+  template        EmailTemplate?    @relation(fields: [templateId], references: [id])
+  recipients      Contact[]         @relation("EmailRecipients")
+
+  @@index([status, sentAt])
+  @@index([activityId])
+  @@map("emails")
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  subject     String
+  body        String
+  htmlBody    String?
+  isActive    Boolean  @default(true)
+  category    String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  user        User     @relation(fields: [userId], references: [id])
+  emails      Email[]
+
+  @@index([category])
+  @@index([userId])
+  @@map("email_templates")
+}
+
+// Marketing & Campaign Models
+model Campaign {
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  type          CampaignType
+  status        CampaignStatus @default(DRAFT)
+  startDate     DateTime?
+  endDate       DateTime?
+  budget        Decimal?
+  actualCost    Decimal?
+  targetAudience String?
+  userId        String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relationships
+  user          User           @relation(fields: [userId], references: [id])
+  leads         CampaignLead[]
+
+  @@index([type, status])
+  @@index([userId])
+  @@map("campaigns")
+}
+
+model CampaignLead {
+  campaignId    String
+  leadId        String
+  joinedAt      DateTime       @default(now())
+
+  campaign      Campaign       @relation(fields: [campaignId], references: [id])
+  lead          Lead           @relation(fields: [leadId], references: [id])
+
+  @@id([campaignId, leadId])
+  @@map("campaign_leads")
+}
+
+// Reporting & Analytics Models
+model Report {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  type        ReportType
+  config      Json       // Report configuration (filters, fields, etc.)
+  isPublic    Boolean    @default(false)
+  userId      String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relationships
+  user        User       @relation(fields: [userId], references: [id])
+
+  @@index([type])
+  @@index([userId])
+  @@map("reports")
+}
+
+// Team & Organization Models
+model Team {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relationships
+  members     TeamMember[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  userId    String
+  teamId    String
+  role      TeamRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  // Relationships
+  user      User     @relation(fields: [userId], references: [id])
+  team      Team     @relation(fields: [teamId], references: [id])
+
+  @@unique([userId, teamId])
+  @@map("team_members")
+}
+
+// Custom Fields System
+model CustomField {
+  id              String             @id @default(cuid())
+  name            String
+  label           String
+  fieldType       CustomFieldType
+  entityType      EntityType         // Contact, Lead, Deal, Company
+  isRequired      Boolean            @default(false)
+  isActive        Boolean            @default(true)
+  options         Json?              // For select/multi-select fields
+  validationRules Json?              // Validation configuration
+  order           Int                @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Relationships
+  values          CustomFieldValue[]
+
+  @@unique([name, entityType])
+  @@index([entityType, isActive])
+  @@map("custom_fields")
+}
+
+model CustomFieldValue {
+  id            String      @id @default(cuid())
+  customFieldId String
+  entityType    EntityType
+  entityId      String
+  value         Json
+  userId        String?
+  contactId     String?
+  leadId        String?
+  dealId        String?
+  companyId     String?
+  activityId    String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relationships
+  customField   CustomField @relation(fields: [customFieldId], references: [id])
+  user          User?       @relation(fields: [userId], references: [id])
+  contact       Contact?    @relation(fields: [contactId], references: [id])
+  lead          Lead?       @relation(fields: [leadId], references: [id])
+  deal          Deal?       @relation(fields: [dealId], references: [id])
+  company       Company?    @relation(fields: [companyId], references: [id])
+  activity      Activity?   @relation(fields: [activityId], references: [id])
+
+  @@unique([customFieldId, entityType, entityId])
+  @@map("custom_field_values")
+}
+
+// Integration & API Models
+model IntegrationToken {
+  id            String            @id @default(cuid())
+  provider      IntegrationType
+  accessToken   String
+  refreshToken  String?
+  expiresAt     DateTime?
+  scope         String?
+  userId        String
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relationships
+  user          User              @relation(fields: [userId], references: [id])
+
+  @@unique([provider, userId])
+  @@index([userId])
+  @@map("integration_tokens")
+}
+
+// System Models
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  entityType  String
+  entityId    String
+  oldValues   Json?
+  newValues   Json?
+  userId      String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id          String             @id @default(cuid())
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?
+  isRead      Boolean            @default(false)
+  recipientId String
+  senderId    String?
+  createdAt   DateTime           @default(now())
+
+  // Relationships
+  recipient   User               @relation("NotificationRecipient", fields: [recipientId], references: [id])
+  sender      User?              @relation("NotificationSender", fields: [senderId], references: [id])
+
+  @@index([recipientId, isRead])
+  @@index([type])
+  @@map("notifications")
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum CompanySize {
+  STARTUP          // 1-10 employees
+  SMALL           // 11-50 employees  
+  MEDIUM          // 51-200 employees
+  LARGE           // 201-1000 employees
+  ENTERPRISE      // 1000+ employees
+}
+
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+  CUSTOMER
+  FORMER_CUSTOMER
+}
+
+enum ContactStatus {
+  ACTIVE
+  INACTIVE
+  BOUNCED
+  UNSUBSCRIBED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  CONVERTED
+  LOST
+  UNQUALIFIED
+}
+
+enum LeadTemperature {
+  HOT
+  WARM
+  COLD
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  TASK
+  NOTE
+  SMS
+  DEMO
+  PROPOSAL
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskType {
+  TASK
+  FOLLOW_UP
+  REMINDER
+  DEADLINE
+}
+
+enum EmailStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  FAILED
+}
+
+enum CampaignType {
+  EMAIL
+  SOCIAL_MEDIA
+  PAID_ADS
+  CONTENT
+  EVENT
+  WEBINAR
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum ReportType {
+  SALES
+  ACTIVITY
+  PIPELINE
+  LEAD
+  CONTACT
+  CUSTOM
+}
+
+enum TeamRole {
+  MEMBER
+  MANAGER
+  ADMIN
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  EMAIL
+  PHONE
+  URL
+  DATE
+  DATETIME
+  BOOLEAN
+  SELECT
+  MULTI_SELECT
+  TEXTAREA
+  CURRENCY
+}
+
+enum EntityType {
+  CONTACT
+  LEAD
+  DEAL
+  COMPANY
+  ACTIVITY
+  USER
+}
+
+enum IntegrationType {
+  GMAIL
+  OUTLOOK
+  GOOGLE_CALENDAR
+  OUTLOOK_CALENDAR
+  TWILIO
+  SLACK
+  ZOOM
+  HUBSPOT
+  SALESFORCE
+}
+
+enum NotificationType {
+  ACTIVITY_REMINDER
+  DEAL_STAGE_CHANGE
+  TASK_ASSIGNED
+  TASK_DUE
+  LEAD_ASSIGNED
+  EMAIL_BOUNCE
+  SYSTEM_ALERT
+}

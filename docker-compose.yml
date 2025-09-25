@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: crm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: crm_db
+      POSTGRES_USER: crm_user
+      POSTGRES_PASSWORD: crm_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - crm-network
+
+  # Redis for Caching and Sessions
+  redis:
+    image: redis:7-alpine
+    container_name: crm-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - crm-network
+
+  # CRM Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crm-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://crm_user:crm_password@postgres:5432/crm_db
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: your-super-secret-key-change-this-in-production
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - crm-network
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+
+  # Prisma Studio (Optional - for database management)
+  prisma-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile.prisma
+    container_name: crm-prisma-studio
+    restart: unless-stopped
+    ports:
+      - "5555:5555"
+    environment:
+      DATABASE_URL: postgresql://crm_user:crm_password@postgres:5432/crm_db
+    depends_on:
+      - postgres
+    networks:
+      - crm-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  crm-network:
+    driver: bridge
+
+# Development override
+# Use: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+---
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://crm_user:crm_password@postgres:5432/crm_db
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: dev-secret-key
+      REDIS_URL: redis://redis:6379
+    command: npm run dev
+
+  postgres:
+    environment:
+      POSTGRES_DB: crm_dev_db

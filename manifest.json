@@ -1,0 +1,227 @@
+{
+  "name": "RealmKit CRM",
+  "version": "1.0.0",
+  "description": "Complete AI-optimized CRM platform for modern sales teams - Customer relationship management with advanced analytics, pipeline management, and AI-powered insights",
+  "namespace": "realmkit/crm",
+  "features": [
+    {
+      "id": "contact-management",
+      "name": "Advanced Contact Management",
+      "description": "360° contact profiles with custom fields, company hierarchies, and interaction timeline"
+    },
+    {
+      "id": "lead-management", 
+      "name": "Smart Lead Management",
+      "description": "AI-powered lead scoring, automated nurturing, and conversion tracking"
+    },
+    {
+      "id": "sales-pipeline",
+      "name": "Visual Sales Pipeline", 
+      "description": "Drag-and-drop deal management with customizable stages and forecasting"
+    },
+    {
+      "id": "activity-tracking",
+      "name": "Activity & Communication Tracking",
+      "description": "Complete activity timeline with email, calls, meetings, and task management"
+    },
+    {
+      "id": "analytics-reporting",
+      "name": "Advanced Analytics & Reporting",
+      "description": "Real-time dashboards, custom reports, and AI-powered sales forecasting"
+    },
+    {
+      "id": "email-integration",
+      "name": "Email & Calendar Integration", 
+      "description": "Gmail, Outlook sync with email tracking and calendar scheduling"
+    },
+    {
+      "id": "real-time-collaboration",
+      "name": "Real-time Team Collaboration",
+      "description": "Live updates, shared deal ownership, and team communication features"
+    },
+    {
+      "id": "mobile-pwa",
+      "name": "Mobile-First PWA",
+      "description": "Progressive Web App with offline capability and native mobile features"
+    },
+    {
+      "id": "ai-insights", 
+      "name": "AI-Powered Insights",
+      "description": "Predictive analytics, lead scoring, next best actions, and automation"
+    },
+    {
+      "id": "custom-fields",
+      "name": "Custom Fields & Workflows",
+      "description": "Flexible data models and automated workflow builder"
+    },
+    {
+      "id": "integrations",
+      "name": "Third-party Integrations", 
+      "description": "Connect with email providers, calendars, phone systems, and marketing tools"
+    },
+    {
+      "id": "security-compliance",
+      "name": "Enterprise Security",
+      "description": "RBAC, audit logging, GDPR compliance, and data encryption"
+    }
+  ],
+  "variables": [
+    {
+      "name": "DATABASE_URL",
+      "description": "PostgreSQL database connection string",
+      "type": "string",
+      "required": true,
+      "defaultValue": "postgresql://user:password@localhost:5432/crm_db"
+    },
+    {
+      "name": "NEXTAUTH_SECRET",
+      "description": "NextAuth secret key for JWT tokens",
+      "type": "string", 
+      "required": true
+    },
+    {
+      "name": "NEXTAUTH_URL",
+      "description": "Base URL for NextAuth callbacks",
+      "type": "string",
+      "required": true,
+      "defaultValue": "http://localhost:3000"
+    },
+    {
+      "name": "EMAIL_FROM",
+      "description": "From email address for system emails",
+      "type": "string",
+      "required": true,
+      "defaultValue": "noreply@yourcrm.com"
+    },
+    {
+      "name": "SMTP_HOST",
+      "description": "SMTP server hostname for email delivery",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "SMTP_PORT", 
+      "description": "SMTP server port",
+      "type": "number",
+      "required": true,
+      "defaultValue": "587"
+    },
+    {
+      "name": "SMTP_USER",
+      "description": "SMTP username",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "SMTP_PASSWORD",
+      "description": "SMTP password", 
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "GOOGLE_CLIENT_ID",
+      "description": "Google OAuth client ID for Gmail integration",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "GOOGLE_CLIENT_SECRET",
+      "description": "Google OAuth client secret for Gmail integration",
+      "type": "string", 
+      "required": false
+    },
+    {
+      "name": "MICROSOFT_CLIENT_ID",
+      "description": "Microsoft OAuth client ID for Outlook integration",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "MICROSOFT_CLIENT_SECRET",
+      "description": "Microsoft OAuth client secret for Outlook integration",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "OPENAI_API_KEY",
+      "description": "OpenAI API key for AI-powered features",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "TWILIO_ACCOUNT_SID",
+      "description": "Twilio Account SID for SMS/Voice integration", 
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "TWILIO_AUTH_TOKEN",
+      "description": "Twilio Auth Token",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "PUSHER_APP_ID",
+      "description": "Pusher App ID for real-time features",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "PUSHER_KEY",
+      "description": "Pusher public key",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "PUSHER_SECRET", 
+      "description": "Pusher secret key",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "PUSHER_CLUSTER",
+      "description": "Pusher cluster region",
+      "type": "string", 
+      "required": false,
+      "defaultValue": "us2"
+    }
+  ],
+  "techStack": [
+    "Next.js 14",
+    "TypeScript 5", 
+    "React 18",
+    "Tailwind CSS 3",
+    "Prisma ORM",
+    "PostgreSQL 15+",
+    "NextAuth 5",
+    "shadcn/ui",
+    "Radix UI",
+    "TanStack Table",
+    "React Big Calendar",
+    "Beautiful DND", 
+    "Framer Motion",
+    "React Hook Form",
+    "Zod Validation",
+    "Recharts",
+    "Zustand",
+    "React Query",
+    "Jest Testing",
+    "Playwright E2E",
+    "Docker",
+    "ESLint",
+    "Prettier"
+  ],
+  "category": "BUSINESS",
+  "tags": [
+    "crm",
+    "sales", 
+    "leads",
+    "contacts",
+    "pipeline",
+    "analytics",
+    "ai",
+    "automation",
+    "business", 
+    "productivity"
+  ]
+}
