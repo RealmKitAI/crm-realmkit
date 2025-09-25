@@ -1,8 +1,8 @@
 {
   "name": "RealmKit CRM",
-  "version": "1.0.0",
+  "version": "1.0.0", 
   "description": "Complete AI-optimized CRM platform for modern sales teams - Customer relationship management with advanced analytics, pipeline management, and AI-powered insights",
-  "namespace": "realmkit/crm",
+  "namespace": "realmkitai/crm-realmkit",
   "features": [
     {
       "id": "contact-management",
