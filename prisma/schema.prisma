@@ -154,6 +154,7 @@ model Contact {
   tasks             Task[]
   emailsSent        Email[]           @relation("EmailRecipients")
   customFieldValues CustomFieldValue[]
+  convertedFromLead Lead?
 
   @@index([email])
   @@index([companyId])
@@ -194,6 +195,7 @@ model Lead {
   activities        Activity[]
   deals             Deal[]
   customFieldValues CustomFieldValue[]
+  campaigns         CampaignLead[]
 
   @@index([email])
   @@index([status, score])
